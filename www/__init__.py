@@ -40,8 +40,10 @@ def create_app(test_config=None):
     from . import auth
     from . import main
 
+
     app.register_blueprint(auth.bp)
     app.register_blueprint(main.bp)
+
 
     # 使 url_for('index') == url_for('blog.index')
     # 在另一个应用程序中，您可以在此处使用 app.route 定义单独的主索引，

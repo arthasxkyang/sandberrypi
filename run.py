@@ -1,3 +1,4 @@
+# unicoding: utf-8
 import www
 
 app = www.create_app()
