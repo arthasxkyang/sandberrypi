@@ -32,6 +32,9 @@ def 播放音乐(filename):
     if filename:
         pygame.mixer.init()
         pygame.mixer.music.set_volume(10)
+        # 如果这个mp3文件存在，则播放，不存在就播放默认音乐init.mp3
+        if not os.path.exists(f"www/media/{filename}.mp3"):
+            filename = "init"
         pygame.mixer.music.load(f"www/media/{filename}.mp3")
         pygame.mixer.music.play()
         return f"正在播放{filename}"
