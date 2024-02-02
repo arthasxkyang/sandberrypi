@@ -4,6 +4,7 @@ import pygame
 from .sandpainting import *
 import os
 import time
+import serial
 
 bp = Blueprint("main", __name__, url_prefix="/main")
 每毫米步数 = 100
@@ -24,7 +25,7 @@ b暂停.append(0)
 # list目录是自定义播放集,以播放集名称为文件名保存
 # 开机直接播放init沙画
 
-
+# 播放音乐
 def 播放音乐(filename):
     # 系统开始播放音乐，文件位置在media文件夹下
     # 判断结尾是否是MP3
@@ -401,51 +402,10 @@ def 当前沙画已完成():
 # TODO: 电机控制代码
 
 def 执行一行(line):
-    # 判断是否是移动命令
-    if line.startswith("G1"):
-        # 切割字符串
-        x = line.split("X")[1].split("Y")[0]
-        y = line.split("Y")[1].split("Z")[0]
-        # 转换为浮点数
-        x = float(x)
-        y = float(y)
-        # 计算步数
-        x_step = x * 每毫米步数
-        y_step = y * 每毫米步数
-        # 判断是否需要移动x轴
-        if x_step != 0:
-            # 判断方向
-            if x_step > 0:
-                # 正向
-                # 电机正转
-                # 电机控制代码
-                time.sleep(0.1)
-                # 电机停止
-                # 电机控制代码
-            else:
-                # 反向
-                # 电机反转
-                # 电机控制代码
-                time.sleep(0.1)
-                # 电机停止
-                # 电机控制代码
-        # 判断是否需要移动y轴
-        if y_step != 0:
-            # 判断方向
-            if y_step > 0:
-                # 正向
-                # 电机正转
-                # 电机控制代码
-                time.sleep(0.1)
-                # 电机停止
-                # 电机控制代码
-            else:
-                # 反向
-                # 电机反转
-                # 电机控制代码
-                time.sleep(0.1)
-                # 电机停止
-                # 电机控制代码
-
+    # 通过serial通讯发送line,波特率115200
+    ser = serial.Serial('/dev/ttyS1', 115200, timeout=1)
+    ser.write(b'[ESP500] line\n')
+    ser.close()
+    return "已执行一行"
 
 播放初始化沙画()
