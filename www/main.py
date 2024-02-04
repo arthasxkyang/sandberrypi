@@ -403,10 +403,11 @@ def 当前沙画已完成():
 
 # 使用香橙派CM4的GPIO,控制4988步进电机,驱动电机,执行命令
 # TODO: 电机控制代码
-
+port = 'COM8'
+brt = 115200
 def 执行一行(line):
     # 通过serial通讯发送line,波特率115200
-    ser = serial.Serial('/dev/ttyS1', 115200, timeout=1)
+    ser = serial.Serial(port, brt, timeout=1)
     ser.write(b'[ESP500] line\n')
     ser.close()
     return "已执行一行"
