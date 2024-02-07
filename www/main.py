@@ -40,6 +40,22 @@ def 播放音乐(filename):
         return "不支持的文件格式"
 
 
+@bp.route("/media/volume/<volume>")
+# 设置音量
+# 函数接受一个浮点数作为参数，
+# 表示音量的大小。音量参数的上下限是0.0到1.0之间，
+# 其中0.0表示静音，1.0表示最大音量。
+# 你可以根据需要选择任何介于这两个值之间的音量大小。
+# 例如，0.5表示一半的音量大小。
+# 返回值:"音量设置为+volume" 或者是 "音量设置失败"
+def 设置音量(volume):
+    # 设置音量
+    try:
+        pygame.mixer.music.set_volume(float(volume))
+        return f"音量设置为{volume}"
+    except:
+        return "音量设置失败"
+
 @bp.route("/media/stop")
 # 返回值:"已停止播放"
 def 停止播放音乐():
