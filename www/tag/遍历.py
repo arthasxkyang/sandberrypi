@@ -1,12 +1,12 @@
-# 输出指定目录所有文件的名称
+# 输出指定目录所有文件的名称,只有文件名,不要路径,不包括子目录
 import os
 
+
 def print_dir(path):
-    for x in os.listdir(path):
-        if os.path.isfile(x):
-            print(x)
-        else:
-            print_dir(x)
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            print(file)
 
 
-print_dir('F:\OneDrive - Fornaxignis\Dev\sandberrypi\www\painting')
+
+print_dir('F:/OneDrive - Fornaxignis/Dev/sandberrypi/www/painting')

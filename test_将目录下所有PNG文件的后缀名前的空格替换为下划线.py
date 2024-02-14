@@ -8,8 +8,11 @@ def rename_files(path):
         for file in files:
             if file.endswith('.png'):
                 new_file = file.replace(' ', '_')
-                os.rename(os.path.join(root, file), os.path.join(root, new_file))
-                print('Renamed:', file, '->', new_file)
+                if file != new_file:
+                    os.rename(os.path.join(root, file), os.path.join(root, new_file))
+                    print('Renamed:', file, '->', new_file)
+                else:
+                    print('No need to rename:', file)
 
 
-rename_files('F:/OneDrive - Fornaxignis/Dev/sandberrypi/www/painting')
+rename_files('./www/painting')

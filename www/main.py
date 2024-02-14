@@ -4,7 +4,7 @@ from flask import *
 
 import pygame
 import os
-
+import requests
 import serial
 
 bp = Blueprint("main", __name__, url_prefix="/main")
@@ -25,16 +25,19 @@ b暂停 = [0]
 # 播放音乐
 # 返回值:"正在播放+filename" 或者是 "不支持的文件格式"
 def 播放音乐(filename):
-    # 系统开始播放音乐，文件位置在media文件夹下
+    # 系统开始播放循环音乐，文件位置在media文件夹下
     # 判断结尾是否是MP3
     if filename:
         pygame.mixer.init()
         pygame.mixer.music.set_volume(10)
         # 如果这个mp3文件存在，则播放，不存在就播放默认音乐init.mp3
-        if not os.path.exists(f"www/media/{filename}.mp3"):
+        if not os.path.exists(f"www/media/re/{filename}.mp3"):
             filename = "init"
-        pygame.mixer.music.load(f"www/media/{filename}.mp3")
-        pygame.mixer.music.play()
+            pygame.mixer.music.load(f"www/media/{filename}.mp3")
+            pygame.mixer.music.play(-1)
+        else:
+            pygame.mixer.music.load(f"www/media/re/{filename}.mp3")
+            pygame.mixer.music.play(-1)
         return f"正在播放{filename}"
     else:
         return "不支持的文件格式"
@@ -55,6 +58,7 @@ def 设置音量(volume):
         return f"音量设置为{volume}"
     except:
         return "音量设置失败"
+
 
 @bp.route("/media/stop")
 # 返回值:"已停止播放"
@@ -316,26 +320,30 @@ def 读取沙画类别():
     return 沙画类别列表
 
 
+
 # 读取类别文件,按类别返回沙画名称列表
 @bp.route("/tag/read/<tagname>")
 # 返回值:沙画名称列表的变量值
 def 按类别返回沙画名称列表(tagname):
     沙画名称列表 = []
     # 打开文件
-    with open(f"www/tag/{tagname}.txt", "r") as f:
-        # 读取文件
-        lines = f.readlines()
-        # 遍历文件
-        for line in lines:
-            # 去除换行符
-            line = line.strip()
-            # 判断是否是注释
-            if line.startswith(";"):
-                # 跳过
-                continue
-            # 添加到列表
-            沙画名称列表.append(line)
-    return 沙画名称列表
+    try:
+        with open(f"www/tag/{tagname}.txt", "r") as f:
+            # 读取文件
+            lines = f.readlines()
+            # 遍历文件
+            for line in lines:
+                # 去除换行符
+                line = line.strip()
+                # 判断是否是注释
+                if line.startswith(";"):
+                    # 跳过
+                    continue
+                # 添加到列表
+                沙画名称列表.append(line)
+        return 沙画名称列表
+    except:
+        return "出错了"
 
 
 # 返回单个沙画的信息
@@ -465,10 +473,11 @@ def 执行一行(line):
         # 以json格式返回{前端开发测试传递的参数为：line,report:已执行一行}
         return {"前端开发测试传递的参数为": line, "report": "已执行一行"}
     # 通过serial通讯发送line,波特率115200
-    ser = serial.Serial(port, brt, timeout=1)
-    ser.write(b'[ESP500] line\n')
-    ser.close()
-    return "已执行一行"
+    else:
+        ser = serial.Serial(port, brt, timeout=1)
+        ser.write(b'[ESP500] line\n')
+        ser.close()
+        return "已执行一行"
 
 
 @bp.route("/status")
@@ -487,6 +496,11 @@ def 查看状态():
     return {"每毫米步数": 每毫米步数, "b暂停": b暂停[0], "当前G代码列表": 当前G代码列表, "当前播放列表": 当前播放列表,
             "当前播放列表位置": 当前播放列表位置[0], "当前播放的沙画名称": 当前播放的沙画名称[0],
             "初始化沙画名称": 初始化沙画名称}
+
+
+# 下面是一些测试用函数
+
+# 测试函数结束
 
 
 播放初始化沙画()

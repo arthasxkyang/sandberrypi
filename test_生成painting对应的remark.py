@@ -3,6 +3,8 @@ import os
 import requests
 from time import sleep
 
+# 使用一言api去自动生成，便于测试
+
 def generate_remark_file():
     for root, dirs, files in os.walk("./www/painting"):
         # 下面的for循环每次间隔1秒

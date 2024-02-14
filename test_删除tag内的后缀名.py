@@ -16,4 +16,4 @@ def delete_suffix(path):
                     print(f'{file} done')
 
 
-delete_suffix('F:/OneDrive - Fornaxignis/Dev/sandberrypi/www/tag')
+delete_suffix('./www/tag')
