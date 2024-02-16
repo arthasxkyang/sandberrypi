@@ -217,7 +217,7 @@ def 从播放集删除沙画(listname, sandpaintingname):
 # pre播放集顺序播放
 @bp.route("/list/pre/play/<listname>")
 # 返回值:"已开始顺序播放播放集" 或者是 "播放集不存在"
-def 播放集顺序播放(listname):
+def pre播放集顺序播放(listname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/pre/{listname}.txt"):
         # 清空当前播放列表,重置播放位置
@@ -248,7 +248,7 @@ def 播放集顺序播放(listname):
 # usr播放集顺序播放
 @bp.route("/list/usr/play/<listname>")
 # 返回值:"已开始顺序播放播放集" 或者是 "播放集不存在"
-def 播放集顺序播放(listname):
+def usr播放集顺序播放(listname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 清空当前播放列表,重置播放位置
@@ -279,7 +279,7 @@ def 播放集顺序播放(listname):
 # 读取pre播放集,返回播放集列表用于前端显示
 @bp.route("/list/pre/read/<listname>")
 # 返回值:正在读取的播放集的变量值 或者是 "播放集不存在"
-def 读取播放集(listname):
+def pre读取播放集(listname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/pre/{listname}.txt"):
         正在读取的播放集 = []
@@ -305,7 +305,7 @@ def 读取播放集(listname):
 # 读取usr播放集,返回播放集列表用于前端显示
 @bp.route("/list/usr/read/<listname>")
 # 返回值:正在读取的播放集的变量值 或者是 "播放集不存在"
-def 读取播放集(listname):
+def usr读取播放集(listname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         正在读取的播放集 = []
@@ -331,7 +331,7 @@ def 读取播放集(listname):
 # 遍历list/pre目录下所有存在文件的名称用于前端显示
 @bp.route("/list/pre/readall")
 # 返回值:播放集名称列表得变量值
-def 遍历list目录下所有文件的名称():
+def 遍历list目录下pre所有文件的名称():
     # 遍历list目录下的txt文件的名称
     播放集名称列表 = []
     for filename in os.listdir("www/list/pre"):
@@ -347,7 +347,7 @@ def 遍历list目录下所有文件的名称():
 # 遍历list/usr目录下所有存在文件的名称用于前端显示
 @bp.route("/list/usr/readall")
 # 返回值:播放集名称列表得变量值
-def 遍历list目录下所有文件的名称():
+def 遍历list目录下usr所有文件的名称():
     # 遍历list目录下的txt文件的名称
     播放集名称列表 = []
     for filename in os.listdir("www/list/usr"):
