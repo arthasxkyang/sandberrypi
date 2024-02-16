@@ -158,28 +158,28 @@ def 播放初始化沙画():
     return "已播放初始化沙画"
 
 
-# 创建一个播放集
+# 创建一个usr播放集
 @bp.route("/list/create/<name>")
 # 返回值:"已创建播放集" 或者是 "播放集已存在"
 def 创建一个播放集(name):
     # 判断list文件夹里是否有同名文件
-    if os.path.exists(f"www/list/{name}.txt"):
+    if os.path.exists(f"www/list/usr/{name}.txt"):
         return "播放集已存在"
     else:
         # 创建一个同名文件
-        with open(f"www/list/{name}.txt", "w") as f:
+        with open(f"www/list/usr/{name}.txt", "w") as f:
             f.write("")
     return "已创建播放集"
 
 
-# 添加沙画到播放集
+# 添加沙画到usr播放集
 @bp.route("/list/add/<listname>/<sandpaintingname>")
 # 返回值:"已添加沙画到播放集" 或者是 "播放集不存在"
 def 添加沙画到播放集(listname, sandpaintingname):
     # 判断list文件夹里是否有同名文件
-    if os.path.exists(f"www/list/{listname}.txt"):
+    if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 打开文件
-        with open(f"www/list/{listname}.txt", "a") as f:
+        with open(f"www/list/usr/{listname}.txt", "a") as f:
             # 写入沙画名
             f.write(f"{sandpaintingname}\n")
         return "已添加沙画到播放集"
@@ -187,14 +187,14 @@ def 添加沙画到播放集(listname, sandpaintingname):
         return "播放集不存在"
 
 
-# 从播放集删除沙画
+# 从usr播放集删除沙画
 @bp.route("/list/delete/<listname>/<sandpaintingname>")
 # 返回值:"已从播放集删除沙画" 或者是 "播放集不存在"
 def 从播放集删除沙画(listname, sandpaintingname):
     # 判断list文件夹里是否有同名文件
-    if os.path.exists(f"www/list/{listname}.txt"):
+    if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 打开文件
-        with open(f"www/list/{listname}.txt", "r") as f:
+        with open(f"www/list/usr/{listname}.txt", "r") as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -214,17 +214,17 @@ def 从播放集删除沙画(listname, sandpaintingname):
         return "播放集不存在"
 
 
-# 播放集顺序播放
-@bp.route("/list/play/<listname>")
+# pre播放集顺序播放
+@bp.route("/list/pre/play/<listname>")
 # 返回值:"已开始顺序播放播放集" 或者是 "播放集不存在"
 def 播放集顺序播放(listname):
     # 判断list文件夹里是否有同名文件
-    if os.path.exists(f"www/list/{listname}.txt"):
+    if os.path.exists(f"www/list/pre/{listname}.txt"):
         # 清空当前播放列表,重置播放位置
         当前播放列表.clear()
         当前播放列表位置[0] = 0
         # 打开文件
-        with open(f"www/list/{listname}.txt", "r") as f:
+        with open(f"www/list/pre/{listname}.txt", "r") as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -245,15 +245,46 @@ def 播放集顺序播放(listname):
         return "播放集不存在"
 
 
-# 读取播放集,返回播放集列表用于前端显示
-@bp.route("/list/read/<listname>")
+# usr播放集顺序播放
+@bp.route("/list/usr/play/<listname>")
+# 返回值:"已开始顺序播放播放集" 或者是 "播放集不存在"
+def 播放集顺序播放(listname):
+    # 判断list文件夹里是否有同名文件
+    if os.path.exists(f"www/list/usr/{listname}.txt"):
+        # 清空当前播放列表,重置播放位置
+        当前播放列表.clear()
+        当前播放列表位置[0] = 0
+        # 打开文件
+        with open(f"www/list/usr/{listname}.txt", "r") as f:
+            # 读取文件
+            lines = f.readlines()
+            # 遍历文件
+            for line in lines:
+                # 去除换行符
+                line = line.strip()
+                # 判断是否是注释
+                if line.startswith(";"):
+                    # 跳过
+                    continue
+                # 将沙画添加到播放列表
+                当前播放列表.append(line)
+        # 开始播放
+        播放沙画(当前播放列表[0])
+        当前播放列表位置[0] = 0
+        return "已开始顺序播放播放集"
+    else:
+        return "播放集不存在"
+
+
+# 读取pre播放集,返回播放集列表用于前端显示
+@bp.route("/list/pre/read/<listname>")
 # 返回值:正在读取的播放集的变量值 或者是 "播放集不存在"
 def 读取播放集(listname):
     # 判断list文件夹里是否有同名文件
-    if os.path.exists(f"www/list/{listname}.txt"):
+    if os.path.exists(f"www/list/pre/{listname}.txt"):
         正在读取的播放集 = []
         # 打开文件
-        with open(f"www/list/{listname}.txt", "r") as f:
+        with open(f"www/list/pre/{listname}.txt", "r") as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -271,13 +302,55 @@ def 读取播放集(listname):
         return "播放集不存在"
 
 
-# 遍历list目录下所有存在文件的名称用于前端显示
-@bp.route("/list/readall")
+# 读取usr播放集,返回播放集列表用于前端显示
+@bp.route("/list/usr/read/<listname>")
+# 返回值:正在读取的播放集的变量值 或者是 "播放集不存在"
+def 读取播放集(listname):
+    # 判断list文件夹里是否有同名文件
+    if os.path.exists(f"www/list/usr/{listname}.txt"):
+        正在读取的播放集 = []
+        # 打开文件
+        with open(f"www/list/usr/{listname}.txt", "r") as f:
+            # 读取文件
+            lines = f.readlines()
+            # 遍历文件
+            for line in lines:
+                # 去除换行符
+                line = line.strip()
+                # 判断是否是注释
+                if line.startswith(";"):
+                    # 跳过
+                    continue
+                # 将沙画添加到播放列表
+                正在读取的播放集.append(line)
+        return 正在读取的播放集
+    else:
+        return "播放集不存在"
+
+
+# 遍历list/pre目录下所有存在文件的名称用于前端显示
+@bp.route("/list/pre/readall")
 # 返回值:播放集名称列表得变量值
 def 遍历list目录下所有文件的名称():
     # 遍历list目录下的txt文件的名称
     播放集名称列表 = []
-    for filename in os.listdir("www/list"):
+    for filename in os.listdir("www/list/pre"):
+        # 判断是否是txt文件
+        if filename.endswith(".txt"):
+            # 去除后缀
+            filename = filename.split(".")[0]
+            # 添加到列表
+            播放集名称列表.append(filename)
+    return 播放集名称列表
+
+
+# 遍历list/usr目录下所有存在文件的名称用于前端显示
+@bp.route("/list/usr/readall")
+# 返回值:播放集名称列表得变量值
+def 遍历list目录下所有文件的名称():
+    # 遍历list目录下的txt文件的名称
+    播放集名称列表 = []
+    for filename in os.listdir("www/list/usr"):
         # 判断是否是txt文件
         if filename.endswith(".txt"):
             # 去除后缀
@@ -318,7 +391,6 @@ def 读取沙画类别():
             # 添加到列表
             沙画类别列表.append(filename)
     return 沙画类别列表
-
 
 
 # 读取类别文件,按类别返回沙画名称列表
