@@ -1,11 +1,10 @@
 # coding=utf-8
 
-from flask import *
+import os
 
 import pygame
-import os
-import requests
 import serial
+from flask import *
 
 bp = Blueprint("main", __name__, url_prefix="/main")
 每毫米步数 = 100
@@ -209,6 +208,10 @@ def 从播放集删除沙画(listname, sandpaintingname):
                 if line == sandpaintingname:
                     # 删除
                     lines.remove(line)
+        # 将删除后的内容写入文件
+        with open(f"www/list/usr/{listname}.txt", "w") as f:
+            for line in lines:
+                f.write(line)
         return "已从播放集删除沙画"
     else:
         return "播放集不存在"
@@ -358,6 +361,26 @@ def 遍历list目录下usr所有文件的名称():
             # 添加到列表
             播放集名称列表.append(filename)
     return 播放集名称列表
+
+
+@bp.route("/list/usr/direct/<listname>", methods=["POST"])
+# 使用request.get_data(as_text=True)获取传入的文本
+# 将传入的文本覆盖存储到对应的文件中
+# 返回值:"已修改播放集" 或者是 "播放集不存在，创建播放集"
+def usr直接修改播放集(listname):
+    # 判断list文件夹里是否有同名文件
+    if os.path.exists(f"www/list/usr/{listname}.txt"):
+        # 打开文件
+        with open(f"www/list/usr/{listname}.txt", "w") as f:
+            # 写入传入的文本
+            f.write(request.get_data(as_text=True))
+        return f"已修改播放集, 内容为:\n{request.get_data(as_text=True)}"
+    else:
+        # 创建一个同名文件
+        with open(f"www/list/usr/{listname}.txt", "w") as f:
+            # 写入传入的文本
+            f.write(request.get_data(as_text=True))
+        return f"播放集不存在, 创建播放集, 内容为:\n{request.get_data(as_text=True)}"
 
 
 # 遍历painting目录下所有存在文件的名称用于前端显示
@@ -568,6 +591,7 @@ def 查看状态():
     return {"每毫米步数": 每毫米步数, "b暂停": b暂停[0], "当前G代码列表": 当前G代码列表, "当前播放列表": 当前播放列表,
             "当前播放列表位置": 当前播放列表位置[0], "当前播放的沙画名称": 当前播放的沙画名称[0],
             "初始化沙画名称": 初始化沙画名称}
+
 
 
 # 下面是一些测试用函数
