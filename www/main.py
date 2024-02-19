@@ -3,6 +3,7 @@
 import os
 
 import pygame
+import requests
 import serial
 from flask import *
 
@@ -363,6 +364,25 @@ def 遍历list目录下usr所有文件的名称():
     return 播放集名称列表
 
 
+@bp.route("/list/usr/reorder/<listname>/<content>")
+# 传入的content是一个字符串,里面包含了沙画名称,以逗号分隔,删除逗号,使用换行符连接
+# 将传入的字符串按逗号分隔后,覆盖存储到对应的文件中
+# 返回值:"已重新排序播放集" 或者是 "播放集不存在, 创建播放集"
+def usr重新排序播放集(listname, content):
+    # 判断list文件夹里是否有同名文件
+    if os.path.exists(f"www/list/usr/{listname}.txt"):
+        model = "已重新排序播放集"
+    else:
+        model = "播放集不存在, 创建播放集"
+    # w模式打开
+    with open(f"www/list/usr/{listname}.txt", "w") as f:
+        # 将传入的字符串按逗号分隔
+        content_edited = content.replace(",", "\n")
+        # 覆盖存储到对应的文件中
+        f.write(content_edited)
+    return {"模式": model, "内容": content_edited}
+
+
 @bp.route("/list/usr/direct/<listname>", methods=["POST"])
 # 使用request.get_data(as_text=True)获取传入的文本
 # 将传入的文本覆盖存储到对应的文件中
@@ -552,27 +572,53 @@ def 当前沙画已完成():
         播放沙画(当前播放列表[当前播放列表位置[0]])
 
 
-# 使用香橙派CM4的GPIO,控制4988步进电机,驱动电机,执行命令
+# 使用香橙派CM4控制4988步进电机,驱动电机,执行命令
 # TODO: 电机控制代码
-port = 'COM8'
-brt = 115200
-b前端开发测试 = 1
+开发测试 = 1
+if 开发测试 == 3:
+    # 串口设置
+    port = 'COM5'
+    brt = 115200
+    # 打开串口
+    ser = serial.Serial(port, brt, timeout=1)
+    ser.timeout = 40
+    ser.write_timeout = 2
 
 
 @bp.route("/execute/<line>")
-# 如果b前端开发测试为真,执行特殊返回
+# 如果开发测试为1,执行前端开发的特殊返回
+# 如果开发测试为2,通过串口发送line
+# 否则通过request发送命令
 # return {"前端开发测试传递的参数为": line, "report": "已执行一行"}
 def 执行一行(line):
     # 如果b前端开发测试为真,则不执行
-    if b前端开发测试 == 1:
+    if 开发测试 == 1:
         # 以json格式返回{前端开发测试传递的参数为：line,report:已执行一行}
         return {"前端开发测试传递的参数为": line, "report": "已执行一行"}
     # 通过serial通讯发送line,波特率115200
+    elif 开发测试 == 2:
+        # 将%20替换为空格
+        line = line.replace("%20", " ")
+        # 将line编码后发送
+        ser.write(line.encode())
+        # 返回结果
+        data = ser.readline()
+        return {"传递的参数为": line, "report": "已执行一行", "返回结果": data.decode()}
     else:
-        ser = serial.Serial(port, brt, timeout=1)
-        ser.write(b'[ESP500] line\n')
-        ser.close()
-        return "已执行一行"
+        try:
+            # 将%20替换为空格
+            line = line.replace("%20", " ")
+            # 解析line,提取X和Y的值
+            x位置 = line.split("X")[1].split(" ")[0]
+            y位置 = line.split("Y")[1]
+            # 通过request发送命令,目标是http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 {X位置} {Y位置}
+            # 例如 http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 X100 Y100
+            req = requests.get(f"http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 X{x位置} Y{y位置}")
+            req.encoding = 'utf-8'
+            # 返回结果, 例如:{"status":"ok","target":"URL请求地址"}
+            return req.json()
+        except:
+            return "执行失败"
 
 
 @bp.route("/status")
@@ -591,7 +637,6 @@ def 查看状态():
     return {"每毫米步数": 每毫米步数, "b暂停": b暂停[0], "当前G代码列表": 当前G代码列表, "当前播放列表": 当前播放列表,
             "当前播放列表位置": 当前播放列表位置[0], "当前播放的沙画名称": 当前播放的沙画名称[0],
             "初始化沙画名称": 初始化沙画名称}
-
 
 
 # 下面是一些测试用函数
