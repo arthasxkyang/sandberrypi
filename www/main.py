@@ -537,7 +537,6 @@ def 读取gcode文件加载到列表(filename):
                     continue
                 # 添加到列表
                 当前G代码列表.append(line)
-            print(当前G代码列表)
             return 当前G代码列表
     except:
         return "文件不存在"
@@ -547,7 +546,6 @@ def 读取gcode文件加载到列表(filename):
 def 执行G代码列表():
     # 遍历列表,从第一行开始,执行一行然后移除
     # 如果播放完,则播放列表里的下一个沙画
-    print(len(当前G代码列表))
     while len(当前G代码列表) > 0:
         # 如果暂停,则跳出循环
         if b暂停[0] == 1:
@@ -617,12 +615,11 @@ def 执行一行(line):
         if not line=='':
             line = line.replace("%20", " ")
             # 解析line,提取X和Y的值
-            print("line = ", line)
             x位置 = line.split("X")[1].split(" ")[0]
             y位置 = line.split("Y")[1]
             # 通过request发送命令,目标是http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 {X位置} {Y位置}
             # 例如 http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 X100 Y100
-            req = requests.get(f"http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 X{x位置} Y{y位置}")
+            req = requests.get(f"http://grblesp.local/command?commandText=$J=G90 G21 F1000 X{x位置} Y{y位置}")
             req.encoding = 'utf-8'
 
         # 返回结果, 例如:{"status":"ok","target":"URL请求地址"}
@@ -653,5 +650,5 @@ def 查看状态():
 
 # 测试函数结束
 
-
-播放初始化沙画()
+# 会阻塞后续程序初始化,导致无法直接进入端口监听状态
+# 播放初始化沙画()
