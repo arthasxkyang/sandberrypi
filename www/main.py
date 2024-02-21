@@ -167,7 +167,7 @@ def 创建一个播放集(name):
         return "播放集已存在"
     else:
         # 创建一个同名文件
-        with open(f"www/list/usr/{name}.txt", "w") as f:
+        with open(f"www/list/usr/{name}.txt", "w",encoding='utf-8') as f:
             f.write("")
     return "已创建播放集"
 
@@ -179,7 +179,7 @@ def 添加沙画到播放集(listname, sandpaintingname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "a") as f:
+        with open(f"www/list/usr/{listname}.txt", "a",encoding='utf-8') as f:
             # 写入沙画名
             f.write(f"{sandpaintingname}\n")
         return "已添加沙画到播放集"
@@ -194,7 +194,7 @@ def 从播放集删除沙画(listname, sandpaintingname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "r") as f:
+        with open(f"www/list/usr/{listname}.txt", "r",encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -210,7 +210,7 @@ def 从播放集删除沙画(listname, sandpaintingname):
                     # 删除
                     lines.remove(line)
         # 将删除后的内容写入文件
-        with open(f"www/list/usr/{listname}.txt", "w") as f:
+        with open(f"www/list/usr/{listname}.txt", "w",encoding='utf-8') as f:
             for line in lines:
                 f.write(line)
         return "已从播放集删除沙画"
@@ -228,7 +228,7 @@ def pre播放集顺序播放(listname):
         当前播放列表.clear()
         当前播放列表位置[0] = 0
         # 打开文件
-        with open(f"www/list/pre/{listname}.txt", "r") as f:
+        with open(f"www/list/pre/{listname}.txt", "r",encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -259,7 +259,7 @@ def usr播放集顺序播放(listname):
         当前播放列表.clear()
         当前播放列表位置[0] = 0
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "r") as f:
+        with open(f"www/list/usr/{listname}.txt", "r",encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -288,7 +288,7 @@ def pre读取播放集(listname):
     if os.path.exists(f"www/list/pre/{listname}.txt"):
         正在读取的播放集 = []
         # 打开文件
-        with open(f"www/list/pre/{listname}.txt", "r") as f:
+        with open(f"www/list/pre/{listname}.txt", "r",encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -314,7 +314,7 @@ def usr读取播放集(listname):
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         正在读取的播放集 = []
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "r") as f:
+        with open(f"www/list/usr/{listname}.txt", "r",encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -375,7 +375,7 @@ def usr重新排序播放集(listname, content):
     else:
         model = "播放集不存在, 创建播放集"
     # w模式打开
-    with open(f"www/list/usr/{listname}.txt", "w") as f:
+    with open(f"www/list/usr/{listname}.txt", "w",encoding='utf-8') as f:
         # 将传入的字符串按逗号分隔
         content_edited = content.replace(",", "\n")
         # 覆盖存储到对应的文件中
@@ -391,13 +391,13 @@ def usr直接修改播放集(listname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "w") as f:
+        with open(f"www/list/usr/{listname}.txt", "w",encoding='utf-8') as f:
             # 写入传入的文本
             f.write(request.get_data(as_text=True))
         return f"已修改播放集, 内容为:\n{request.get_data(as_text=True)}"
     else:
         # 创建一个同名文件
-        with open(f"www/list/usr/{listname}.txt", "w") as f:
+        with open(f"www/list/usr/{listname}.txt", "w",encoding='utf-8') as f:
             # 写入传入的文本
             f.write(request.get_data(as_text=True))
         return f"播放集不存在, 创建播放集, 内容为:\n{request.get_data(as_text=True)}"
@@ -434,7 +434,7 @@ def 读取沙画类别():
             # 添加到列表
             沙画类别列表.append(filename)
     return 沙画类别列表
-
+    # return 'Hello World'
 
 # 读取类别文件,按类别返回沙画名称列表
 @bp.route("/tag/read/<tagname>")
@@ -443,7 +443,7 @@ def 按类别返回沙画名称列表(tagname):
     沙画名称列表 = []
     # 打开文件
     try:
-        with open(f"www/tag/{tagname}.txt", "r") as f:
+        with open(f"www/tag/{tagname}.txt", "r",encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -474,7 +474,10 @@ def 返回单个沙画的信息(name):
     # 添加沙画音乐
     沙画结构["music"] = f"www/media/{name}.mp3"
     # 添加沙画备注
-    沙画结构["remark"] = f"www/remark/{name}.txt"
+    with open(f"www/remark/{name}.txt", "r",encoding='utf-8') as f:
+        沙画结构["remark"] = f.read()
+    # except:
+    #     沙画结构["remark"] = "会当凌绝顶，一览众山小"
     # 如果当前播放的沙画名称是当前沙画,则添加播放状态为正在播放.
     if 当前播放的沙画名称[0] == name:
         沙画结构["status"] = "playing"
@@ -495,7 +498,7 @@ def 将事前清理gcode加入到G代码():
     清理G代码列表 = []
     # 打开文件
     try:
-        with open(f"www/gcode/clear.gcode", "r") as f:
+        with open(f"www/gcode/clear.gcode", "r",encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -518,10 +521,10 @@ def 将事前清理gcode加入到G代码():
 # 读取gcode文件加载到列表
 def 读取gcode文件加载到列表(filename):
     # 清空当前列表
-    当前G代码列表.clear()
+
     # 打开文件
     try:
-        with open(f"www/gcode/{filename}.gcode", "r") as f:
+        with open(f"www/gcode/{filename}.gcode", "r",encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -534,6 +537,7 @@ def 读取gcode文件加载到列表(filename):
                     continue
                 # 添加到列表
                 当前G代码列表.append(line)
+            print(当前G代码列表)
             return 当前G代码列表
     except:
         return "文件不存在"
@@ -543,6 +547,7 @@ def 读取gcode文件加载到列表(filename):
 def 执行G代码列表():
     # 遍历列表,从第一行开始,执行一行然后移除
     # 如果播放完,则播放列表里的下一个沙画
+    print(len(当前G代码列表))
     while len(当前G代码列表) > 0:
         # 如果暂停,则跳出循环
         if b暂停[0] == 1:
@@ -574,8 +579,8 @@ def 当前沙画已完成():
 
 # 使用香橙派CM4控制4988步进电机,驱动电机,执行命令
 # TODO: 电机控制代码
-开发测试 = 1
-if 开发测试 == 3:
+开发测试 = 3
+if 开发测试 == 2:
     # 串口设置
     port = 'COM5'
     brt = 115200
@@ -592,6 +597,7 @@ if 开发测试 == 3:
 # return {"前端开发测试传递的参数为": line, "report": "已执行一行"}
 def 执行一行(line):
     # 如果b前端开发测试为真,则不执行
+
     if 开发测试 == 1:
         # 以json格式返回{前端开发测试传递的参数为：line,report:已执行一行}
         return {"前端开发测试传递的参数为": line, "report": "已执行一行"}
@@ -605,20 +611,24 @@ def 执行一行(line):
         data = ser.readline()
         return {"传递的参数为": line, "report": "已执行一行", "返回结果": data.decode()}
     else:
-        try:
+        # try:
+
             # 将%20替换为空格
+        if not line=='':
             line = line.replace("%20", " ")
             # 解析line,提取X和Y的值
+            print("line = ", line)
             x位置 = line.split("X")[1].split(" ")[0]
             y位置 = line.split("Y")[1]
             # 通过request发送命令,目标是http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 {X位置} {Y位置}
             # 例如 http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 X100 Y100
             req = requests.get(f"http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 X{x位置} Y{y位置}")
             req.encoding = 'utf-8'
-            # 返回结果, 例如:{"status":"ok","target":"URL请求地址"}
-            return req.json()
-        except:
-            return "执行失败"
+
+        # 返回结果, 例如:{"status":"ok","target":"URL请求地址"}
+        # return req.json()
+        # except:
+        #     return "执行失败"
 
 
 @bp.route("/status")
