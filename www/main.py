@@ -1,19 +1,22 @@
 # coding=utf-8
 
 import os
+from time import sleep
 
 import pygame
 import serial
 from flask import *
 
 bp = Blueprint("main", __name__, url_prefix="/main")
-每毫米步数 = 100
+每毫米步数 = 50
 b暂停 = [0]
 当前G代码列表 = []
 当前播放列表 = []
 当前播放列表位置 = [0]
 当前播放的沙画名称 = [""]
 初始化沙画名称 = '龙年大吉'
+配置 = {"比例伸缩": 0.5, "运动速度(米/秒)": 0.01, "每毫米步数": 每毫米步数}
+状态 = dict(当前x坐标=float(0), 当前y坐标=float(0), 移动中=False)
 
 
 @bp.route("/media/play/<filename>")
@@ -98,6 +101,7 @@ def 继续播放音乐():
 # 返回值:"已开始播放"
 def 播放沙画(name):
     停止播放沙画()
+    归零()
     读取gcode文件加载到列表(name)
     将事前清理gcode加入到G代码()
     当前播放的沙画名称[0] = name
@@ -579,34 +583,112 @@ def 当前沙画已完成():
 # TODO: 电机控制代码
 开发测试 = 2
 if 开发测试 == 2:
-    try:
-        # 串口设置
-        port = 'COM5'
-        brt = 115200
-        # 打开串口
-        ser = serial.Serial(port, brt, timeout=1)
-        ser.timeout = 40
-        ser.write_timeout = 2
-    except:
-        print("[ERROR] 串口打开失败")
+    for i in range(10):
+        try:
+            # 串口设置
+            port = 'COM5'
+            brt = 115200
+            # 打开串口
+            ser = serial.Serial(port, brt, timeout=1)
+            ser.timeout = 40
+            ser.write_timeout = 2
+            print(f"[INFO] 串口打开成功,第{i + 1}次尝试!!!")
+            sleep(1)
+            break
+        except:
+            print(f"[ERROR] 串口打开失败,第{i + 1}次尝试!!!")
+            sleep(1)
+    print(f"[ERROR] 串口打开失败!!!程序继续执行!!!")
 
 
 @bp.route("/execute/<line>")
 def 执行一行(line):
     # 将%20替换为空格
     line_url_decoded = line.replace("%20", " ")
-    # 将line编码后发送
-    line_serial_encoded = line_url_decoded.encode()
-    ser.write(line_serial_encoded)
+    # 解析 x坐标和y坐标
+    if "X" in line_url_decoded:
+        gcode90_X = line_url_decoded.split("X")[1].split(" ")[0]
+        gcode90_X = float(gcode90_X * 配置["比例伸缩"])
+    else:
+        gcode90_X = -1
+    if "Y" in line_url_decoded:
+        gcode90_Y = line_url_decoded.split("Y")[1].split(" ")[0]
+        gcode90_Y = float(gcode90_Y * 配置["比例伸缩"])
+    else:
+        gcode90_Y = -1
+    # 根据当前坐标和目标坐标计算步数
+    if gcode90_X != -1:
+        delta_X = gcode90_X - 状态["当前x坐标"]
+    else:
+        delta_X = 0
+    if gcode90_Y != -1:
+        delta_Y = gcode90_Y - 状态["当前y坐标"]
+    else:
+        delta_Y = 0
+    # 计算直线差值运动长度
+    delta_L = (abs(delta_X) ** 2 + abs(delta_Y) ** 2) ** 0.5
+    # 计算运动时间
+    time = int(delta_L / 配置["运动速度"])
+    # 计算步数
+    step_X = int(delta_X * 每毫米步数)
+    step_Y = int(delta_Y * 每毫米步数)
+    # TODO: 串口发送格式化命令
+    # 将step_X,stepY,time 以十六进制编码发送到串口
+    # 报文格式为: 0x55 0xAA [CMD] [X_H] [X_L] [Y_H] [Y_L] [T_H] [T_L]
+    # CMD: 0x01 代表直线运动
+    # X_H: X步数高8位
+    # X_L: X步数低8位
+    # Y_H: Y步数高8位
+    # Y_L: Y步数低8位
+    # T_H: 时间高8位
+    # T_L: 时间低8位
+    X_H = step_X >> 8
+    X_L = step_X & 0xff
+    Y_H = step_Y >> 8
+    Y_L = step_Y & 0xff
+    T_H = time >> 8
+    T_L = time & 0xff
+    # 串口发送
+    line_prepared4_serial = f"0x55 0xAA 0x01 {X_H} {X_L} {Y_H} {Y_L} {T_H} {T_L}"
+    print(f"line_serial_encoded:{line_prepared4_serial} ")
+    ser.write(line_prepared4_serial.encode())
+    print(f"line_serial_encoded.encode():{line_prepared4_serial.encode()}")
     # 返回结果
     while True:
         data = ser.readline()
         if data:
             break
-    result = {"传递的参数为": line, "URL解码结果": line_url_decoded, "串口编码结果": line_serial_encoded,
+    result = {"传递的参数为": line, "URL解码结果": line_url_decoded, "串口拼接结果": line_prepared4_serial,
+              "串口实际发送": f"{line_prepared4_serial.encode()}",
               "报告": "已执行一行", "返回结果": data.decode()}
     print(result)
-    return result
+    if data.decode() == "success":
+        print("执行成功")
+        return result
+    else:
+        print("执行失败,正在重新执行")
+        执行一行(line)
+
+
+@bp.route("/axis-home")
+def 归零():
+    # 串口发送归零请求
+    # TODO: 串口发送归零请求
+    归零请求 = b'G28\n'
+    ser.write(归零请求)
+    # 接收归零成功信息
+    while True:
+        data = ser.readline()
+        if data:
+            break
+    # 如果接收到归零成功信息,返回成功
+    if data.decode() == "success":
+        # 重置当前坐标
+        状态["当前x坐标"] = 0
+        状态["当前y坐标"] = 0
+        return "归零成功"
+    else:
+        return "归零失败"
 
 
 @bp.route("/status")
