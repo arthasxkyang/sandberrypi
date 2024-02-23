@@ -1,20 +1,22 @@
 # coding=utf-8
 
 import os
+from time import sleep
 
 import pygame
-import requests
 import serial
 from flask import *
 
 bp = Blueprint("main", __name__, url_prefix="/main")
-每毫米步数 = 100
+每毫米步数 = 50
 b暂停 = [0]
 当前G代码列表 = []
 当前播放列表 = []
 当前播放列表位置 = [0]
 当前播放的沙画名称 = [""]
 初始化沙画名称 = '龙年大吉'
+配置 = {"比例伸缩": 0.5, "运动速度(米/秒)": 0.01, "每毫米步数": 每毫米步数}
+状态 = dict(当前x坐标=float(0), 当前y坐标=float(0), 移动中=False)
 
 
 @bp.route("/media/play/<filename>")
@@ -99,6 +101,7 @@ def 继续播放音乐():
 # 返回值:"已开始播放"
 def 播放沙画(name):
     停止播放沙画()
+    归零()
     读取gcode文件加载到列表(name)
     将事前清理gcode加入到G代码()
     当前播放的沙画名称[0] = name
@@ -167,7 +170,7 @@ def 创建一个播放集(name):
         return "播放集已存在"
     else:
         # 创建一个同名文件
-        with open(f"www/list/usr/{name}.txt", "w",encoding='utf-8') as f:
+        with open(f"www/list/usr/{name}.txt", "w", encoding='utf-8') as f:
             f.write("")
     return "已创建播放集"
 
@@ -179,7 +182,7 @@ def 添加沙画到播放集(listname, sandpaintingname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "a",encoding='utf-8') as f:
+        with open(f"www/list/usr/{listname}.txt", "a", encoding='utf-8') as f:
             # 写入沙画名
             f.write(f"{sandpaintingname}\n")
         return "已添加沙画到播放集"
@@ -194,7 +197,7 @@ def 从播放集删除沙画(listname, sandpaintingname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "r",encoding='utf-8') as f:
+        with open(f"www/list/usr/{listname}.txt", "r", encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -210,7 +213,7 @@ def 从播放集删除沙画(listname, sandpaintingname):
                     # 删除
                     lines.remove(line)
         # 将删除后的内容写入文件
-        with open(f"www/list/usr/{listname}.txt", "w",encoding='utf-8') as f:
+        with open(f"www/list/usr/{listname}.txt", "w", encoding='utf-8') as f:
             for line in lines:
                 f.write(line)
         return "已从播放集删除沙画"
@@ -228,7 +231,7 @@ def pre播放集顺序播放(listname):
         当前播放列表.clear()
         当前播放列表位置[0] = 0
         # 打开文件
-        with open(f"www/list/pre/{listname}.txt", "r",encoding='utf-8') as f:
+        with open(f"www/list/pre/{listname}.txt", "r", encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -259,7 +262,7 @@ def usr播放集顺序播放(listname):
         当前播放列表.clear()
         当前播放列表位置[0] = 0
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "r",encoding='utf-8') as f:
+        with open(f"www/list/usr/{listname}.txt", "r", encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -288,7 +291,7 @@ def pre读取播放集(listname):
     if os.path.exists(f"www/list/pre/{listname}.txt"):
         正在读取的播放集 = []
         # 打开文件
-        with open(f"www/list/pre/{listname}.txt", "r",encoding='utf-8') as f:
+        with open(f"www/list/pre/{listname}.txt", "r", encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -314,7 +317,7 @@ def usr读取播放集(listname):
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         正在读取的播放集 = []
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "r",encoding='utf-8') as f:
+        with open(f"www/list/usr/{listname}.txt", "r", encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -375,7 +378,7 @@ def usr重新排序播放集(listname, content):
     else:
         model = "播放集不存在, 创建播放集"
     # w模式打开
-    with open(f"www/list/usr/{listname}.txt", "w",encoding='utf-8') as f:
+    with open(f"www/list/usr/{listname}.txt", "w", encoding='utf-8') as f:
         # 将传入的字符串按逗号分隔
         content_edited = content.replace(",", "\n")
         # 覆盖存储到对应的文件中
@@ -391,13 +394,13 @@ def usr直接修改播放集(listname):
     # 判断list文件夹里是否有同名文件
     if os.path.exists(f"www/list/usr/{listname}.txt"):
         # 打开文件
-        with open(f"www/list/usr/{listname}.txt", "w",encoding='utf-8') as f:
+        with open(f"www/list/usr/{listname}.txt", "w", encoding='utf-8') as f:
             # 写入传入的文本
             f.write(request.get_data(as_text=True))
         return f"已修改播放集, 内容为:\n{request.get_data(as_text=True)}"
     else:
         # 创建一个同名文件
-        with open(f"www/list/usr/{listname}.txt", "w",encoding='utf-8') as f:
+        with open(f"www/list/usr/{listname}.txt", "w", encoding='utf-8') as f:
             # 写入传入的文本
             f.write(request.get_data(as_text=True))
         return f"播放集不存在, 创建播放集, 内容为:\n{request.get_data(as_text=True)}"
@@ -436,6 +439,7 @@ def 读取沙画类别():
     return 沙画类别列表
     # return 'Hello World'
 
+
 # 读取类别文件,按类别返回沙画名称列表
 @bp.route("/tag/read/<tagname>")
 # 返回值:沙画名称列表的变量值
@@ -443,7 +447,7 @@ def 按类别返回沙画名称列表(tagname):
     沙画名称列表 = []
     # 打开文件
     try:
-        with open(f"www/tag/{tagname}.txt", "r",encoding='utf-8') as f:
+        with open(f"www/tag/{tagname}.txt", "r", encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -474,7 +478,7 @@ def 返回单个沙画的信息(name):
     # 添加沙画音乐
     沙画结构["music"] = f"www/media/{name}.mp3"
     # 添加沙画备注
-    with open(f"www/remark/{name}.txt", "r",encoding='utf-8') as f:
+    with open(f"www/remark/{name}.txt", "r", encoding='utf-8') as f:
         沙画结构["remark"] = f.read()
     # except:
     #     沙画结构["remark"] = "会当凌绝顶，一览众山小"
@@ -498,7 +502,7 @@ def 将事前清理gcode加入到G代码():
     清理G代码列表 = []
     # 打开文件
     try:
-        with open(f"www/gcode/clear.gcode", "r",encoding='utf-8') as f:
+        with open(f"www/gcode/clear.gcode", "r", encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -524,7 +528,7 @@ def 读取gcode文件加载到列表(filename):
 
     # 打开文件
     try:
-        with open(f"www/gcode/{filename}.gcode", "r",encoding='utf-8') as f:
+        with open(f"www/gcode/{filename}.gcode", "r", encoding='utf-8') as f:
             # 读取文件
             lines = f.readlines()
             # 遍历文件
@@ -577,55 +581,126 @@ def 当前沙画已完成():
 
 # 使用香橙派CM4控制4988步进电机,驱动电机,执行命令
 # TODO: 电机控制代码
-开发测试 = 3
+开发测试 = 2
 if 开发测试 == 2:
-    # 串口设置
-    port = 'COM5'
-    brt = 115200
-    # 打开串口
-    ser = serial.Serial(port, brt, timeout=1)
-    ser.timeout = 40
-    ser.write_timeout = 2
+    for i in range(10):
+        try:
+            # 串口设置
+            port = 'COM5'
+            brt = 115200
+            # 打开串口
+            ser = serial.Serial(port, brt, timeout=1)
+            ser.timeout = 40
+            ser.write_timeout = 2
+            print(f"[INFO] 串口打开成功,第{i + 1}次尝试!!!")
+            sleep(1)
+            break
+        except:
+            print(f"[ERROR] 串口打开失败,第{i + 1}次尝试!!!")
+            sleep(1)
+    print(f"[ERROR] 串口打开失败!!!程序继续执行!!!")
 
 
 @bp.route("/execute/<line>")
-# 如果开发测试为1,执行前端开发的特殊返回
-# 如果开发测试为2,通过串口发送line
-# 否则通过request发送命令
-# return {"前端开发测试传递的参数为": line, "report": "已执行一行"}
 def 执行一行(line):
-    # 如果b前端开发测试为真,则不执行
-
-    if 开发测试 == 1:
-        # 以json格式返回{前端开发测试传递的参数为：line,report:已执行一行}
-        return {"前端开发测试传递的参数为": line, "report": "已执行一行"}
-    # 通过serial通讯发送line,波特率115200
-    elif 开发测试 == 2:
-        # 将%20替换为空格
-        line = line.replace("%20", " ")
-        # 将line编码后发送
-        ser.write(line.encode())
-        # 返回结果
-        data = ser.readline()
-        return {"传递的参数为": line, "report": "已执行一行", "返回结果": data.decode()}
+    # 将%20替换为空格
+    line_url_decoded = line.replace("%20", " ")
+    # 解析 x坐标和y坐标
+    if "X" in line_url_decoded:
+        gcode90_X = line_url_decoded.split("X")[1].split(" ")[0]
+        gcode90_X = float(gcode90_X * 配置["比例伸缩"])
     else:
-        # try:
+        gcode90_X = -1
+    if "Y" in line_url_decoded:
+        gcode90_Y = line_url_decoded.split("Y")[1].split(" ")[0]
+        gcode90_Y = float(gcode90_Y * 配置["比例伸缩"])
+    else:
+        gcode90_Y = -1
+    # 根据当前坐标和目标坐标计算步数
+    if gcode90_X != -1:
+        delta_X = gcode90_X - 状态["当前x坐标"]
+    else:
+        delta_X = 0
+    if gcode90_Y != -1:
+        delta_Y = gcode90_Y - 状态["当前y坐标"]
+    else:
+        delta_Y = 0
+    # 计算X和Y的增量的绝对值和符号,符号以1和2表示
+    delta_X_abs = abs(delta_X)
+    delta_Y_abs = abs(delta_Y)
+    delta_X_sign = 1 if delta_X >= 0 else 2
+    delta_Y_sign = 1 if delta_Y >= 0 else 2
+    # 计算直线差值运动长度
+    delta_L = (delta_X_abs ** 2 + delta_Y_abs ** 2) ** 0.5
+    # 计算运动时间
+    time = int(delta_L / 配置["运动速度"])
+    # 计算步数
+    step_X = int(delta_X_abs * 每毫米步数)
+    step_Y = int(delta_Y_abs * 每毫米步数)
+    # TODO: 串口发送格式化命令
+    # 将step_X,stepY,time 以十六进制编码发送到串口
+    # 报文格式为: 0x55 [CMD] [X_H] [X_L] [X_D] [Y_H] [Y_L] [Y_D] [T_H] [T_L]
+    # CMD: 0x01 代表直线运动
+    # X_H: X步数高8位
+    # X_L: X步数低8位
+    # X_D: X步数方向
+    # Y_H: Y步数高8位
+    # Y_L: Y步数低8位
+    # Y_D: Y步数方向
+    # T_H: 时间高8位
+    # T_L: 时间低8位
+    X_H = step_X >> 8
+    X_L = step_X & 0xff
+    X_D = delta_X_sign
+    Y_H = step_Y >> 8
+    Y_L = step_Y & 0xff
+    Y_D = delta_Y_sign
+    T_H = time >> 8
+    T_L = time & 0xff
+    # 串口发送
+    line_prepared4_serial = f"0x55 0x01 {X_H} {X_L} {X_D} {Y_H} {Y_L} {Y_D} {T_H} {T_L}"
+    print(f"line_serial_encoded:{line_prepared4_serial} ")
+    ser.write(line_prepared4_serial.encode())
+    print(f"line_serial_encoded.encode():{line_prepared4_serial.encode()}")
+    # 返回结果
+    while True:
+        data = ser.readline()
+        if data:
+            break
+    result = {"传递的参数为": line, "URL解码结果": line_url_decoded, "串口拼接结果": line_prepared4_serial,
+              "串口实际发送": f"{line_prepared4_serial.encode()}",
+              "报告": "已执行一行", "返回结果": data.decode()}
+    print(result)
+    if data.decode() == "success":
+        # 更新当前坐标
+        状态["当前x坐标"] = 状态["当前x坐标"] + delta_X
+        状态["当前y坐标"] = 状态["当前y坐标"] + delta_Y
+        print(f"执行成功, 当前坐标为:({状态['当前x坐标']},{状态['当前y坐标']})")
+        return result
+    else:
+        print("执行失败,正在重新执行")
+        执行一行(line)
 
-            # 将%20替换为空格
-        if not line=='':
-            line = line.replace("%20", " ")
-            # 解析line,提取X和Y的值
-            x位置 = line.split("X")[1].split(" ")[0]
-            y位置 = line.split("Y")[1]
-            # 通过request发送命令,目标是http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 {X位置} {Y位置}
-            # 例如 http://grblesp.local/command?commandText=$J=G01 G90 G21 F1000 X100 Y100
-            req = requests.get(f"http://grblesp.local/command?commandText=$J=G90 G21 F1000 X{x位置} Y{y位置}")
-            req.encoding = 'utf-8'
 
-        # 返回结果, 例如:{"status":"ok","target":"URL请求地址"}
-        # return req.json()
-        # except:
-        #     return "执行失败"
+@bp.route("/axis-home")
+def 归零():
+    # 串口发送归零请求
+    # TODO: 串口发送归零请求
+    归零请求 = b'G28\n'
+    ser.write(归零请求)
+    # 接收归零成功信息
+    while True:
+        data = ser.readline()
+        if data:
+            break
+    # 如果接收到归零成功信息,返回成功
+    if data.decode() == "success":
+        # 重置当前坐标
+        状态["当前x坐标"] = 0
+        状态["当前y坐标"] = 0
+        return "归零成功"
+    else:
+        return "归零失败"
 
 
 @bp.route("/status")
@@ -644,7 +719,6 @@ def 查看状态():
     return {"每毫米步数": 每毫米步数, "b暂停": b暂停[0], "当前G代码列表": 当前G代码列表, "当前播放列表": 当前播放列表,
             "当前播放列表位置": 当前播放列表位置[0], "当前播放的沙画名称": 当前播放的沙画名称[0],
             "初始化沙画名称": 初始化沙画名称}
-
 
 # 下面是一些测试用函数
 
