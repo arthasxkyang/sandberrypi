@@ -625,31 +625,40 @@ def 执行一行(line):
         delta_Y = gcode90_Y - 状态["当前y坐标"]
     else:
         delta_Y = 0
+    # 计算X和Y的增量的绝对值和符号,符号以1和2表示
+    delta_X_abs = abs(delta_X)
+    delta_Y_abs = abs(delta_Y)
+    delta_X_sign = 1 if delta_X >= 0 else 2
+    delta_Y_sign = 1 if delta_Y >= 0 else 2
     # 计算直线差值运动长度
-    delta_L = (abs(delta_X) ** 2 + abs(delta_Y) ** 2) ** 0.5
+    delta_L = (delta_X_abs ** 2 + delta_Y_abs ** 2) ** 0.5
     # 计算运动时间
     time = int(delta_L / 配置["运动速度"])
     # 计算步数
-    step_X = int(delta_X * 每毫米步数)
-    step_Y = int(delta_Y * 每毫米步数)
+    step_X = int(delta_X_abs * 每毫米步数)
+    step_Y = int(delta_Y_abs * 每毫米步数)
     # TODO: 串口发送格式化命令
     # 将step_X,stepY,time 以十六进制编码发送到串口
-    # 报文格式为: 0x55 0xAA [CMD] [X_H] [X_L] [Y_H] [Y_L] [T_H] [T_L]
+    # 报文格式为: 0x55 [CMD] [X_H] [X_L] [X_D] [Y_H] [Y_L] [Y_D] [T_H] [T_L]
     # CMD: 0x01 代表直线运动
     # X_H: X步数高8位
     # X_L: X步数低8位
+    # X_D: X步数方向
     # Y_H: Y步数高8位
     # Y_L: Y步数低8位
+    # Y_D: Y步数方向
     # T_H: 时间高8位
     # T_L: 时间低8位
     X_H = step_X >> 8
     X_L = step_X & 0xff
+    X_D = delta_X_sign
     Y_H = step_Y >> 8
     Y_L = step_Y & 0xff
+    Y_D = delta_Y_sign
     T_H = time >> 8
     T_L = time & 0xff
     # 串口发送
-    line_prepared4_serial = f"0x55 0xAA 0x01 {X_H} {X_L} {Y_H} {Y_L} {T_H} {T_L}"
+    line_prepared4_serial = f"0x55 0x01 {X_H} {X_L} {X_D} {Y_H} {Y_L} {Y_D} {T_H} {T_L}"
     print(f"line_serial_encoded:{line_prepared4_serial} ")
     ser.write(line_prepared4_serial.encode())
     print(f"line_serial_encoded.encode():{line_prepared4_serial.encode()}")
@@ -663,7 +672,10 @@ def 执行一行(line):
               "报告": "已执行一行", "返回结果": data.decode()}
     print(result)
     if data.decode() == "success":
-        print("执行成功")
+        # 更新当前坐标
+        状态["当前x坐标"] = 状态["当前x坐标"] + delta_X
+        状态["当前y坐标"] = 状态["当前y坐标"] + delta_Y
+        print(f"执行成功, 当前坐标为:({状态['当前x坐标']},{状态['当前y坐标']})")
         return result
     else:
         print("执行失败,正在重新执行")
