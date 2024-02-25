@@ -4,8 +4,9 @@ import os
 from time import sleep
 
 import pygame
-import serial
+# import serial
 from flask import *
+from .stepper import Stepper
 
 bp = Blueprint("main", __name__, url_prefix="/main")
 每毫米步数 = 50
@@ -582,18 +583,13 @@ def 当前沙画已完成():
 # 使用香橙派CM4控制4988步进电机,驱动电机,执行命令
 # TODO: 电机控制代码
 开发测试 = 2
+串口配置 = {"port": 'COM22', "bdr": 115200}
+
 if 开发测试 == 2:
     for i in range(10):
         try:
-            # 串口设置
-            port = 'COM5'
-            brt = 115200
             # 打开串口
-            ser = serial.Serial(port, brt, timeout=1)
-            ser.timeout = 40
-            ser.write_timeout = 2
-            print(f"[INFO] 串口打开成功,第{i + 1}次尝试!!!")
-            sleep(1)
+            stepper = Stepper(port=串口配置["port"], bdr=串口配置["bdr"])
             break
         except:
             print(f"[ERROR] 串口打开失败,第{i + 1}次尝试!!!")
@@ -637,36 +633,9 @@ def 执行一行(line):
     # 计算步数
     step_X = int(delta_X_abs * 每毫米步数)
     step_Y = int(delta_Y_abs * 每毫米步数)
-    # TODO: 串口发送格式化命令
-    # 将step_X,stepY,time 以十六进制编码发送到串口
-    # 报文格式为: 0x55 [CMD] [X_H] [X_L] [X_D] [Y_H] [Y_L] [Y_D] [T_H] [T_L]
-    # CMD: 0x01 代表直线运动
-    # X_H: X步数高8位
-    # X_L: X步数低8位
-    # X_D: X步数方向
-    # Y_H: Y步数高8位
-    # Y_L: Y步数低8位
-    # Y_D: Y步数方向
-    # T_H: 时间高8位
-    # T_L: 时间低8位
-    X_H = step_X >> 8
-    X_L = step_X & 0xff
-    X_D = delta_X_sign
-    Y_H = step_Y >> 8
-    Y_L = step_Y & 0xff
-    Y_D = delta_Y_sign
-    T_H = time >> 8
-    T_L = time & 0xff
+    # 将step_X,stepY,time 发送到串口
     # 串口发送
-    line_prepared4_serial = f"0x55 0x01 {X_H} {X_L} {X_D} {Y_H} {Y_L} {Y_D} {T_H} {T_L}"
-    print(f"line_serial_encoded:{line_prepared4_serial} ")
-    ser.write(line_prepared4_serial.encode())
-    print(f"line_serial_encoded.encode():{line_prepared4_serial.encode()}")
-    # 返回结果
-    while True:
-        data = ser.readline()
-        if data:
-            break
+    stepper.move(step_X, step_Y, time)
     result = {"传递的参数为": line, "URL解码结果": line_url_decoded, "串口拼接结果": line_prepared4_serial,
               "串口实际发送": f"{line_prepared4_serial.encode()}",
               "报告": "已执行一行", "返回结果": data.decode()}
