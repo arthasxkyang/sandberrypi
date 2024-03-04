@@ -1,5 +1,6 @@
 from serial import Serial
 
+
 class Stepper:
     def __init__(self, port, bdr):
         self.port = port
@@ -18,25 +19,31 @@ class Stepper:
             0x00, 0x00, 0x00, 0x00, 0x00
         ]
 
-    def reset(self):
+    def home(self):
         self.Ser.flush()
+        print("stepper -----      Homing")
         self.Ser.write(self.rst_cmd)
         while True:
             result = self.Ser.readline()
             print(result)
-            if 'OK'.encode() in result:
+            if 'O'.encode() or 'K'.encode() in result:
                 return True
 
     def reboot(self):
+        self.Ser.flush()
+        print("stepper -----      Rebooting")
         self.Ser.write(self.reboot_cmd)
         while True:
             result = self.Ser.readline()
-            if 'OK'.encode() in result:
+            if 'O'.encode() or 'K'.encode() in result:
                 break
 
-    def move(self, x, y,t):
+    def move(self, x, y, t=1000):
+        self.Ser.flush()
+        # print("stepper -----      Moving")
+        # print(f"x= {x},y= {y},t= {t}")
         drx = 0
-        if x < 0 :
+        if x < 0:
             x = -x
             drx = 0
         else:
@@ -48,17 +55,17 @@ class Stepper:
         else:
             dry = 1
 
-        #将x拆分为两个字节
+        # 将x拆分为两个字节
         x1 = x >> 8
         x2 = x & 0xff
-        #将y拆分为两个字节
+        # 将y拆分为两个字节
         y1 = y >> 8
         y2 = y & 0xff
-        #将t拆分为两个字节
+        # 将t拆分为两个字节
         t1 = t >> 8
         t2 = t & 0xff
 
-        #将x1,x2,y1,y2放入cmdbuffer
+        # 将x1,x2,y1,y2放入cmdbuffer
         self.cmdbuffer[2] = x1
         self.cmdbuffer[3] = x2
         self.cmdbuffer[4] = drx
@@ -72,14 +79,12 @@ class Stepper:
         while True:
             result = self.Ser.readline()
             print(result)
-            if 'OK'.encode() in result:
-                break
-
+            if 'O'.encode() or 'K'.encode() in result:
+                return True
 
 
 if __name__ == '__main__':
     step = Stepper('COM22', 115200)
-    if step.reset():
+    if step.home():
         print('reset success')
     step.move(10000, 5000, 1000)
-

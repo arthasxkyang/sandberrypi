@@ -7,7 +7,8 @@ import time
 
 
 def cb():
-    time.sleep(5)
+    # 此处项目经理要求延迟两秒XD
+    time.sleep(2)
     req = requests.get("http://localhost:5000/main/sc/init")
 
 

@@ -16,7 +16,7 @@ b暂停 = [0]
 当前播放列表位置 = [0]
 当前播放的沙画名称 = [""]
 初始化沙画名称 = '龙年大吉'
-配置 = {"比例伸缩": 0.5, "运动速度(米/秒)": 0.01, "每毫米步数": 每毫米步数}
+配置 = {"比例伸缩": 1.8, "X伸缩倍率": 2, "Y伸缩倍率": 1, "运动速度": 0.1, "每毫米步数": 每毫米步数}
 状态 = dict(当前x坐标=float(0), 当前y坐标=float(0), 移动中=False)
 
 
@@ -102,12 +102,13 @@ def 继续播放音乐():
 # 返回值:"已开始播放"
 def 播放沙画(name):
     停止播放沙画()
+    b暂停[0] = 0
     归零()
     读取gcode文件加载到列表(name)
     将事前清理gcode加入到G代码()
     当前播放的沙画名称[0] = name
     播放音乐(name)
-    b暂停[0] = 0
+
     执行G代码列表()
     return "已开始播放"
 
@@ -484,8 +485,9 @@ def 返回单个沙画的信息(name):
     # except:
     #     沙画结构["remark"] = "会当凌绝顶，一览众山小"
     # 如果当前播放的沙画名称是当前沙画,则添加播放状态为正在播放.
-    if 当前播放的沙画名称[0] == name & b暂停[0] == 0:
-        沙画结构["status"] = "playing"
+    if 当前播放的沙画名称[0] == name:
+        if b暂停[0] == 0:
+            沙画结构["status"] = "playing"
     else:
         沙画结构["status"] = "stop"
     return 沙画结构
@@ -518,6 +520,7 @@ def 将事前清理gcode加入到G代码():
                 清理G代码列表.append(line)
         # "清理G代码列表"的全部内容按顺序插入到到"当前G代码列表"的最前面
         当前G代码列表[:0] = 清理G代码列表
+        print(f"已将清理gcode加入到G代码")
         return "已将清理gcode加入到G代码"
     except:
         return "文件不存在"
@@ -526,7 +529,7 @@ def 将事前清理gcode加入到G代码():
 # 读取gcode文件加载到列表
 def 读取gcode文件加载到列表(filename):
     # 清空当前列表
-
+    当前G代码列表.clear()
     # 打开文件
     try:
         with open(f"www/gcode/{filename}.gcode", "r", encoding='utf-8') as f:
@@ -542,6 +545,8 @@ def 读取gcode文件加载到列表(filename):
                     continue
                 # 添加到列表
                 当前G代码列表.append(line)
+            print(f"已读取{filename}.gcode")
+            print(当前G代码列表)
             return 当前G代码列表
     except:
         return "文件不存在"
@@ -603,13 +608,13 @@ def 执行一行(line):
     line_url_decoded = line.replace("%20", " ")
     # 解析 x坐标和y坐标
     if "X" in line_url_decoded:
-        gcode90_X = line_url_decoded.split("X")[1].split(" ")[0]
-        gcode90_X = float(gcode90_X * 配置["比例伸缩"])
+        gcode90_X = float(line_url_decoded.split("X")[1].split(" ")[0])
+        gcode90_X = float(gcode90_X * 配置["比例伸缩"] * 配置["X伸缩倍率"])
     else:
         gcode90_X = -1
     if "Y" in line_url_decoded:
-        gcode90_Y = line_url_decoded.split("Y")[1].split(" ")[0]
-        gcode90_Y = float(gcode90_Y * 配置["比例伸缩"])
+        gcode90_Y = float(line_url_decoded.split("Y")[1].split(" ")[0])
+        gcode90_Y = float(gcode90_Y * 配置["比例伸缩"] * 配置["Y伸缩倍率"])
     else:
         gcode90_Y = -1
     # 根据当前坐标和目标坐标计算步数
@@ -620,6 +625,7 @@ def 执行一行(line):
     if gcode90_Y != -1:
         delta_Y = gcode90_Y - 状态["当前y坐标"]
     else:
+
         delta_Y = 0
     # 计算X和Y的增量的绝对值和符号,符号以1和2表示
     delta_X_abs = abs(delta_X)
@@ -631,45 +637,35 @@ def 执行一行(line):
     # 计算运动时间
     time = int(delta_L / 配置["运动速度"])
     # 计算步数
-    step_X = int(delta_X_abs * 每毫米步数)
-    step_Y = int(delta_Y_abs * 每毫米步数)
+    step_X = int(delta_X * 每毫米步数)
+    step_Y = int(delta_Y * 每毫米步数)
     # 将step_X,stepY,time 发送到串口
     # 串口发送
-    stepper.move(step_X, step_Y, time)
-    result = {"传递的参数为": line, "URL解码结果": line_url_decoded, "串口拼接结果": line_prepared4_serial,
-              "串口实际发送": f"{line_prepared4_serial.encode()}",
-              "报告": "已执行一行", "返回结果": data.decode()}
-    print(result)
-    if data.decode() == "success":
-        # 更新当前坐标
-        状态["当前x坐标"] = 状态["当前x坐标"] + delta_X
-        状态["当前y坐标"] = 状态["当前y坐标"] + delta_Y
-        print(f"执行成功, 当前坐标为:({状态['当前x坐标']},{状态['当前y坐标']})")
-        return result
-    else:
-        print("执行失败,正在重新执行")
-        执行一行(line)
+    params = {"传递的参数为": line, "URL解码结果": line_url_decoded, "传递的X绝对坐标": gcode90_X,
+              "传递的Y绝对坐标": gcode90_Y,
+              "当前x坐标": 状态["当前x坐标"], "当前y坐标": 状态["当前y坐标"], "delta_X": delta_X, "delta_Y": delta_Y,
+              "delta_X_abs": delta_X_abs, "delta_Y_abs": delta_Y_abs, "delta_X_sign": delta_X_sign,
+              "delta_Y_sign": delta_Y_sign, "delta_L": delta_L,
+              "step_X": step_X, "step_Y": step_Y, "time": time}
+    # print(params)
+    print(stepper.move(step_X, step_Y, time))
+    状态["当前x坐标"] = 状态["当前x坐标"] + delta_X
+    状态["当前y坐标"] = 状态["当前y坐标"] + delta_Y
+    print(f"执行成功, 当前坐标为:({状态['当前x坐标']},{状态['当前y坐标']})")
+    return True
+    # else:
+    #     print("执行失败,正在重新执行")
+    #     执行一行(line)
 
 
 @bp.route("/axis-home")
 def 归零():
     # 串口发送归零请求
-    # TODO: 串口发送归零请求
-    归零请求 = b'G28\n'
-    ser.write(归零请求)
-    # 接收归零成功信息
-    while True:
-        data = ser.readline()
-        if data:
-            break
-    # 如果接收到归零成功信息,返回成功
-    if data.decode() == "success":
-        # 重置当前坐标
-        状态["当前x坐标"] = 0
-        状态["当前y坐标"] = 0
-        return "归零成功"
-    else:
-        return "归零失败"
+    print(stepper.home())
+    状态["当前x坐标"] = 0
+    状态["当前y坐标"] = 0
+    print(f"执行成功归零, 当前坐标为:({状态['当前x坐标']},{状态['当前y坐标']})")
+    return "已归零"
 
 
 @bp.route("/status")
