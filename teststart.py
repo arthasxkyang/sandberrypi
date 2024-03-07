@@ -15,5 +15,5 @@ def cb():
 app = www.create_app()
 if __name__ == "__main__":
     tr1 = tr.Thread(target=cb)
-    tr1.start()
+    # tr1.start()
     app.run(host="0.0.0.0", port=5000)

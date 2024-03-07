@@ -27,6 +27,7 @@ class Stepper:
             result = self.Ser.readline()
             print(result)
             if 'O'.encode() or 'K'.encode() in result:
+                print('im here')
                 return True
 
     def reboot(self):
